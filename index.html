@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wisp – disposable email addresses</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e6edf0;--surface:#fff;--ink:#12202b;--muted:#5a6b78;--line:#cdd8de;--accent:#2f5bff;--accent-ink:#fff;--warn:#d98a12;--danger:#c23a3a;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e161c;--surface:#16212a;--ink:#e8eff3;--muted:#8fa2b0;--line:#27363f;--accent:#6f8dff;--accent-ink:#0e161c;--warn:#f0b24a;--danger:#ff7b7b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e161c;--surface:#16212a;--ink:#e8eff3;--muted:#8fa2b0;--line:#27363f;--accent:#6f8dff;--accent-ink:#0e161c;--warn:#f0b24a;--danger:#ff7b7b;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:920px;margin:0 auto;padding:20px 20px 64px}
+header{display:flex;justify-content:space-between;align-items:center;padding:8px 0 40px}
+.logo{font-weight:800;font-size:1.4rem;letter-spacing:-.03em}
+.logo i{display:inline-block;width:.7em;height:.7em;border-radius:50% 50% 50% 0;background:var(--accent);margin-right:.35em;transform:rotate(-45deg)}
+.hbtn{background:none;border:1px solid var(--line);color:var(--ink);border-radius:99px;padding:6px 14px;font:inherit;font-size:.9rem;cursor:pointer}
+h1{font-size:clamp(2.2rem,6vw,4rem);line-height:1.02;letter-spacing:-.04em;font-weight:800;margin:0 0 14px;max-width:14ch}
+.lede{color:var(--muted);font-size:1.1rem;max-width:52ch;margin:0 0 32px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:24px}
+.addr-row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.addr{flex:1 1 280px;min-width:0;font-size:clamp(1.15rem,3.6vw,1.9rem);font-weight:600;letter-spacing:-.02em;word-break:break-all}
+.addr small{color:var(--muted);font-weight:400}
+.timer{display:flex;align-items:center;gap:12px}
+.ring{position:relative;width:64px;height:64px}
+.ring svg{transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:6}
+.ring .bg{stroke:var(--line)}
+.ring .fg{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset 1s linear,stroke .3s}
+.ring.low .fg{stroke:var(--warn)}
+.ring span{position:absolute;inset:0;display:grid;place-items:center;font-size:.85rem;font-weight:600;font-variant-numeric:tabular-nums}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+button.b{font:inherit;font-weight:600;border-radius:12px;padding:10px 18px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+button.b.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button.b:hover{filter:brightness(.95)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+select{font:inherit;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.inbox{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:16px;margin-top:20px}
+@media(max-width:720px){.inbox{grid-template-columns:1fr}}
+.list{padding:8px;max-height:420px;overflow:auto}
+.list h2,.view h2{font-size:1rem;margin:10px 12px;font-weight:600}
+.msg{display:block;width:100%;text-align:left;font:inherit;color:inherit;background:none;border:0;border-radius:12px;padding:10px 12px;cursor:pointer}
+.msg:hover,.msg[aria-current="true"]{background:var(--bg)}
+.msg b{display:block;font-size:.95rem}.msg span{display:block;color:var(--muted);font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msg.unread b::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);margin-right:8px}
+.empty{color:var(--muted);padding:18px 12px;font-size:.95rem}
+.view{min-height:220px}
+.view .meta{color:var(--muted);font-size:.9rem;margin:0 0 16px}
+.view p{margin:0 0 12px;max-width:62ch}
+.view .del{color:var(--danger)}
+.dead{color:var(--danger);font-weight:600}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:48px}
+.facts h3{margin:0 0 6px;font-size:1.05rem}.facts p{margin:0;color:var(--muted);font-size:.95rem}
+.note{margin-top:32px;font-size:.85rem;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:99px;font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.on{opacity:1}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+.mbody{white-space:pre-wrap;overflow-wrap:anywhere;max-width:62ch;margin:0 0 16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="logo"><i></i>Wisp</div>
+  <button class="hbtn" id="theme" type="button">Switch theme</button>
+</header>
+
+<h1>An inbox that disappears.</h1>
+<p class="lede">Get a throwaway email address in one click. It’s completely free, with no account, no limits and no ads. Use it to sign up, grab the confirmation, and move on.</p>
+
+<section class="card" aria-label="Your temporary address">
+  <div class="addr-row">
+    <div class="addr" id="addr" aria-live="polite"></div>
+    <div class="timer">
+      <div class="ring" id="ring"><svg width="64" height="64" viewBox="0 0 64 64"><circle class="bg" cx="32" cy="32" r="28"/><circle class="fg" id="fg" cx="32" cy="32" r="28" stroke-dasharray="175.93" stroke-dashoffset="0"/></svg><span id="clock">10:00</span></div>
+      <div><strong id="state">Active</strong><br><small style="color:var(--muted)">until it self-destructs</small></div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="b pri" id="copy" type="button">Copy address</button>
+    <button class="b" id="extend" type="button">Add 10 minutes</button>
+    <button class="b" id="fresh" type="button">New address</button>
+    <label class="sr" style="display:contents"><span style="position:absolute;left:-9999px">Domain</span>
+    <select id="domain"></select></label>
+  </div>
+</section>
+
+<section class="inbox" aria-label="Inbox">
+  <div class="card list"><h2>Inbox <span id="count" style="color:var(--muted);font-weight:400"></span></h2><div id="list"></div></div>
+  <div class="card view" id="view"><div class="empty">Select a message to read it. New mail appears here as it arrives.</div></div>
+</section>
+
+<section class="facts">
+  <div><h3>Free, always</h3><p>No plans, no payment details, no cap on how many addresses you create. Every feature is open to everyone.</p></div>
+  <div><h3>No sign-up</h3><p>No account, no password, no personal details. Open the page and you have an address.</p></div>
+  <div><h3>Gone in 10 minutes</h3><p>Each address and everything in it is deleted when the timer ends. Add time if you need it.</p></div>
+  <div><h3>Read-only inbox</h3><p>Receive verification codes, links and receipts. Sending is turned off to keep the service clean.</p></div>
+</section>
+
+<p class="note">Messages are received live and deleted for good when the timer ends or when you press New address.</p>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+var $=function(id){return document.getElementById(id)};
+var A=["quiet","amber","swift","paper","lunar","mossy","tidal","brisk","hollow","velvet","clever","pale"];
+var B=["otter","comet","river","pebble","falcon","lantern","meadow","harbor","maple","cinder","willow","ember"];
+var st=null,poll=null,busy=false;
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+function esc(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML}
+function toast(t){var e=$("toast");e.textContent=t;e.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(function(){e.classList.remove("on")},2200)}
+function call(a,b){return fetch("/.netlify/functions/api?action="+a,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b||{})}).then(function(r){return r.json().then(function(j){if(!r.ok){var e=new Error(j.error||"Request failed");e.status=r.status;throw e}return j})})}
+function auth(x){return Object.assign({token:st.token,inbox:st.inbox},x||{})}
+function save(){try{localStorage.setItem("wisp-live",JSON.stringify(st&&{address:st.address,token:st.token,inbox:st.inbox,exp:st.exp,total:st.total}))}catch(e){}}
+function expire(){if(!st||st.dead)return;st.dead=true;st.msgs=[];st.sel=null;clearInterval(poll);try{localStorage.removeItem("wisp-live")}catch(e){}render();tick()}
+function start(o){st={address:o.address,token:o.token,inbox:o.inbox,exp:o.exp,total:o.total||600,msgs:[],sel:null,body:null,dead:false};save();clearInterval(poll);poll=setInterval(refresh,5000);render();tick();refresh()}
+function create(){
+  if(busy)return;busy=true;
+  var old=st&&!st.dead?st:null;
+  if(old)call("destroy",{token:old.token}).catch(function(){});
+  var local=pick(A)+"."+pick(B)+Math.floor(10+Math.random()*90);
+  $("addr").textContent="Creating your address…";
+  call("create",{local:local,domain:$("domain").value}).then(function(r){start(r)}).catch(function(e){$("addr").textContent="Couldn’t create an address. Press New address to try again."}).then(function(){busy=false});
+}
+function refresh(){
+  if(!st||st.dead)return;
+  call("messages",auth()).then(function(r){
+    var had=st.msgs.length;st.msgs=r.messages;
+    if(r.messages.length>had&&had>=0&&st.loaded)toast("New message from "+r.messages[0].from);
+    st.loaded=true;render();
+  }).catch(function(e){if(e.status===410||e.status===401)expire()});
+}
+function render(){
+  if(!st){return}
+  var at=st.address.split("@");
+  $("addr").innerHTML=st.dead?'<span class="dead">This address has expired.</span>':esc(at[0])+"<small>@"+esc(at[1])+"</small>";
+  $("count").textContent=st.msgs.length?"("+st.msgs.length+")":"";
+  var l=$("list");
+  if(st.dead)l.innerHTML='<div class="empty">The inbox was deleted. Press New address to start again.</div>';
+  else if(!st.msgs.length)l.innerHTML='<div class="empty">Waiting for mail. Use the address above to sign up somewhere.</div>';
+  else l.innerHTML=st.msgs.map(function(m){return '<button type="button" class="msg'+(m.isRead?"":" unread")+'" data-id="'+esc(m.id)+'"'+(st.sel===m.id?' aria-current="true"':"")+'><b>'+esc(m.from)+'</b><span>'+esc(m.subject)+'</span></button>'}).join("");
+  var v=$("view");
+  if(st.body&&st.sel){v.innerHTML='<h2>'+esc(st.body.subject)+'</h2><p class="meta">From '+esc(st.body.from)+'</p><div class="mbody">'+esc(st.body.text)+'</div><p><button class="b del" type="button" id="del">Delete message</button></p>'}
+  else v.innerHTML='<div class="empty">Select a message to read it. New mail appears here as it arrives.</div>';
+}
+function tick(){
+  if(!st)return;
+  var left=st.dead?0:Math.max(0,Math.round((st.exp-Date.now())/1000));
+  var m=Math.floor(left/60),s=left%60;
+  $("clock").textContent=m+":"+(s<10?"0":"")+s;
+  $("fg").style.strokeDashoffset=175.93*(1-left/Math.max(st.total,left,1));
+  $("ring").classList.toggle("low",left>0&&left<=60);
+  var S=$("state");
+  if(left===0&&!st.dead){call("destroy",{token:st.token}).catch(function(){});expire();return}
+  S.textContent=st.dead?"Expired":left<=60?"Expiring soon":"Active";S.className=st.dead?"dead":"";
+}
+$("list").addEventListener("click",function(e){var b=e.target.closest(".msg");if(!b||!st)return;var id=b.dataset.id;st.sel=id;st.body=null;
+  call("message",auth({id:id})).then(function(r){if(st.sel===id){st.body=r;st.msgs.forEach(function(m){if(m.id===id)m.isRead=true});render()}}).catch(function(){toast("Couldn’t open that message")});render()});
+$("view").addEventListener("click",function(e){if(e.target.id!=="del"||!st)return;var id=st.sel;
+  call("delete_message",auth({id:id})).then(function(){st.msgs=st.msgs.filter(function(m){return m.id!==id});st.sel=null;st.body=null;render()}).catch(function(){toast("Couldn’t delete that message")})});
+$("copy").onclick=function(){if(!st||st.dead)return;
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(st.address).then(function(){toast("Address copied")},function(){toast("Select the address to copy it")});else toast("Select the address to copy it")};
+$("extend").onclick=function(){if(!st||st.dead)return;call("extend",{token:st.token}).then(function(r){st.token=r.token;st.exp=r.exp;st.total=Math.max(600,Math.round((r.exp-Date.now())/1000));save();tick();toast("Added 10 minutes")}).catch(function(){toast("Couldn’t extend the timer")})};
+$("fresh").onclick=create;
+$("domain").onchange=create;
+$("theme").onclick=function(){var r=document.documentElement,dark=r.dataset.theme?r.dataset.theme==="dark":matchMedia("(prefers-color-scheme:dark)").matches;r.dataset.theme=dark?"light":"dark"};
+call("domains").then(function(r){
+  $("domain").innerHTML=r.domains.map(function(d){return "<option>"+esc(d)+"</option>"}).join("");
+  var s=null;try{s=JSON.parse(localStorage.getItem("wisp-live")||"null")}catch(e){}
+  if(s&&s.exp>Date.now()){$("domain").value=s.address.split("@")[1];start(s)}else create();
+}).catch(function(){$("addr").textContent="The mail service isn’t reachable right now."});
+setInterval(tick,1000);
+})();
+</script>
+
+</body>
+</html>
